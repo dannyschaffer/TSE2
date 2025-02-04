@@ -1,0 +1,142 @@
+{% extends "base.html" %}
+
+{% block title %}Add Todo - The Sweet Escape{% endblock %}
+
+{% block additional_styles %}
+  <style>
+    .form-container {
+      background: white;
+      border-radius: 12px;
+      padding: 24px;
+      box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+    }
+    .form-group {
+      margin-bottom: 20px;
+    }
+    .form-label {
+      display: block;
+      margin-bottom: 8px;
+      color: #1a1c37;
+      font-weight: 500;
+    }
+    .form-control {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #edf2f7;
+      border-radius: 8px;
+      font-size: 1rem;
+      transition: border-color 0.2s;
+    }
+    .form-control:focus {
+      outline: none;
+      border-color: var(--baby-blue);
+    }
+    textarea.form-control {
+      min-height: 100px;
+      resize: vertical;
+    }
+    .submit-btn {
+      background-color: var(--baby-green);
+      color: #1a1c37;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 8px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background-color 0.2s;
+    }
+    .submit-btn:hover {
+      background-color: #89c9b7;
+    }
+    .cancel-btn {
+      background-color: var(--baby-pink);
+      color: #1a1c37;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 8px;
+      font-weight: 500;
+      text-decoration: none;
+      margin-right: 10px;
+      transition: background-color 0.2s;
+    }
+    .cancel-btn:hover {
+      background-color: #ffc4d4;
+      color: #1a1c37;
+      text-decoration: none;
+    }
+    .form-actions {
+      display: flex;
+      justify-content: flex-start;
+      align-items: center;
+      margin-top: 30px;
+    }
+    .schedule-options {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 20px;
+      margin-top: 20px;
+      padding: 20px;
+      background-color: #f8faf9;
+      border-radius: 8px;
+    }
+    .schedule-title {
+      grid-column: 1 / -1;
+      color: #4a5568;
+      font-size: 0.9rem;
+      margin-bottom: 10px;
+    }
+  </style>
+{% endblock %}
+
+{% block content %}
+  <div class="content-header">
+    <h1 class="content-title">Add New Todo</h1>
+  </div>
+
+  <div class="form-container">
+    <form method="POST">
+      <div class="form-group">
+        <label class="form-label" for="title">Title *</label>
+        <input type="text" class="form-control" id="title" name="title" required>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="description">Description</label>
+        <textarea class="form-control" id="description" name="description"></textarea>
+      </div>
+
+      <div class="schedule-options">
+        <div class="schedule-title">Schedule (Optional)</div>
+        
+        <div class="form-group">
+          <label class="form-label" for="week_number">Week Number</label>
+          <input type="number" class="form-control" id="week_number" name="week_number" min="1" max="52">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="day_of_week">Day of Week</label>
+          <select class="form-control" id="day_of_week" name="day_of_week">
+            <option value="">Select a day</option>
+            <option value="Monday">Monday</option>
+            <option value="Tuesday">Tuesday</option>
+            <option value="Wednesday">Wednesday</option>
+            <option value="Thursday">Thursday</option>
+            <option value="Friday">Friday</option>
+            <option value="Saturday">Saturday</option>
+            <option value="Sunday">Sunday</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="time_of_day">Time of Day</label>
+          <input type="time" class="form-control" id="time_of_day" name="time_of_day">
+        </div>
+      </div>
+
+      <div class="form-actions">
+        <a href="{{ url_for('todos') }}" class="cancel-btn">Cancel</a>
+        <button type="submit" class="submit-btn">Add Todo</button>
+      </div>
+    </form>
+  </div>
+{% endblock %}

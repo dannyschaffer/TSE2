@@ -1,0 +1,130 @@
+{% extends "base.html" %}
+
+{% block title %}Add Message Template - The Sweet Escape{% endblock %}
+
+{% block additional_styles %}
+  <style>
+    .form-container {
+      background: white;
+      border-radius: 12px;
+      padding: 24px;
+      box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+      max-width: 800px;
+      margin: 0 auto;
+    }
+    .form-group {
+      margin-bottom: 20px;
+    }
+    .form-label {
+      display: block;
+      margin-bottom: 8px;
+      color: #1a1c37;
+      font-weight: 500;
+    }
+    .form-control {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #edf2f7;
+      border-radius: 8px;
+      font-size: 1rem;
+      transition: border-color 0.2s;
+    }
+    .form-control:focus {
+      outline: none;
+      border-color: var(--baby-blue);
+    }
+    textarea.form-control {
+      min-height: 200px;
+      resize: vertical;
+    }
+    .btn {
+      padding: 12px 24px;
+      border-radius: 8px;
+      font-weight: 500;
+      cursor: pointer;
+      border: none;
+      text-decoration: none;
+    }
+    .btn-submit {
+      background-color: var(--baby-green);
+      color: #1a1c37;
+    }
+    .btn-cancel {
+      background-color: var(--baby-pink);
+      color: #1a1c37;
+      margin-right: 10px;
+    }
+    .form-actions {
+      display: flex;
+      justify-content: flex-start;
+      margin-top: 30px;
+    }
+    .placeholder-info {
+      background-color: #f8faf9;
+      padding: 16px;
+      border-radius: 8px;
+      margin-top: 24px;
+    }
+    .placeholder-title {
+      font-weight: 500;
+      color: #1a1c37;
+      margin-bottom: 8px;
+    }
+    .placeholder-list {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      font-size: 0.9rem;
+      color: #4a5568;
+    }
+    .placeholder-list li {
+      margin-bottom: 4px;
+    }
+    .help-text {
+      font-size: 0.9rem;
+      color: #718096;
+      margin-top: 4px;
+    }
+  </style>
+{% endblock %}
+
+{% block content %}
+  <div class="content-header">
+    <h1 class="content-title">Add Message Template</h1>
+  </div>
+
+  <div class="form-container">
+    <form method="POST">
+      <div class="form-group">
+        <label class="form-label" for="name">Template Name</label>
+        <input type="text" class="form-control" id="name" name="name" required>
+        <div class="help-text">A descriptive name for this template (e.g., "2-Day Follow-up")</div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="subject">Email Subject</label>
+        <input type="text" class="form-control" id="subject" name="subject" required>
+        <div class="help-text">You can use placeholders like {customer_name}</div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="body">Message Body</label>
+        <textarea class="form-control" id="body" name="body" required></textarea>
+      </div>
+
+      <div class="placeholder-info">
+        <div class="placeholder-title">Available Placeholders</div>
+        <ul class="placeholder-list">
+          <li>{customer_name} - Customer's name</li>
+          <li>{order_number} - Order number</li>
+          <li>{order_date} - Order date</li>
+        </ul>
+      </div>
+
+      <div class="form-actions">
+        <a href="{{ url_for('messages') }}" class="btn btn-cancel">Cancel</a>
+        <button type="submit" class="btn btn-submit">Create Template</button>
+      </div>
+    </form>
+  </div>
+{% endblock %}

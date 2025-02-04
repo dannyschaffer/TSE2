@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Edit Order - Sweet Escape</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <style>
+        body { background-color: #f2f3d9; color: #2f242c; }
+        .container { margin-top: 50px; max-width: 600px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2 class="text-center">Edit Order</h2>
+        <form method="POST">
+            <div class="form-group">
+                <label for="order_number">Order Number</label>
+                <input type="text" class="form-control" id="order_number" name="order_number" value="{{ order.order_number }}" required>
+            </div>
+            <div class="form-group">
+                <label for="customer_name">Customer Name</label>
+                <input type="text" class="form-control" id="customer_name" name="customer_name" value="{{ order.customer_name }}" required>
+            </div>
+            <div class="form-group">
+                <label for="tel">Telephone</label>
+                <input type="tel" class="form-control" id="tel" name="tel" value="{{ order.telephone }}" required>
+            </div>
+            <div class="form-group">
+                <label for="email">Email</label>
+                <input type="email" class="form-control" id="email" name="email" value="{{ order.email }}" required>
+            </div>
+            <div class="form-group">
+                <label for="order_date">Order Date (YYYY-MM-DD)</label>
+                <input type="date" class="form-control" id="order_date" name="order_date" value="{{ order.order_date }}" required>
+            </div>
+            <div class="form-group">
+                <label>Communication Channel</label><br>
+                <div class="form-check form-check-inline">
+                    <input class="form-check-input" type="radio" name="communication_channel" id="email_channel" value="email" {% if order.communication_channel == 'email' %}checked{% endif %}>
+                    <label class="form-check-label" for="email_channel">Email</label>
+                </div>
+                <div class="form-check form-check-inline">
+                    <input class="form-check-input" type="radio" name="communication_channel" id="whatsapp_channel" value="whatsapp" {% if order.communication_channel == 'whatsapp' %}checked{% endif %}>
+                    <label class="form-check-label" for="whatsapp_channel">WhatsApp</label>
+                </div>
+            </div>
+            <button type="submit" class="btn btn-success">Update Order</button>
+            <a href="{{ url_for('dashboard') }}" class="btn btn-secondary">Cancel</a>
+        </form>
+    </div>
+</body>
+</html>

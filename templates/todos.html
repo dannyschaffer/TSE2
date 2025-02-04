@@ -1,0 +1,239 @@
+{% extends "base.html" %}
+
+{% block title %}Todos - The Sweet Escape{% endblock %}
+
+{% block additional_styles %}
+  <style>
+    .todo-container {
+      background: white;
+      border-radius: 12px;
+      padding: 24px;
+      box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+    }
+    .todo-item {
+      display: flex;
+      align-items: flex-start;
+      padding: 16px;
+      border-bottom: 1px solid #edf2f7;
+      transition: background-color 0.2s;
+    }
+    .todo-item:last-child {
+      border-bottom: none;
+    }
+    .todo-item:hover {
+      background-color: #f8faf9;
+    }
+    .todo-checkbox {
+      margin-right: 16px;
+      margin-top: 4px;
+    }
+    .todo-content {
+      flex-grow: 1;
+    }
+    .todo-title {
+      font-size: 1.1rem;
+      font-weight: 500;
+      color: #1a1c37;
+      margin-bottom: 4px;
+    }
+    .todo-completed .todo-title {
+      text-decoration: line-through;
+      color: #8e9eb7;
+    }
+    .todo-description {
+      color: #4a5568;
+      font-size: 0.9rem;
+      margin-bottom: 8px;
+    }
+    .todo-meta {
+      display: flex;
+      gap: 16px;
+      font-size: 0.8rem;
+      color: #8e9eb7;
+    }
+    .todo-meta-item {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .todo-actions {
+      display: flex;
+      gap: 8px;
+    }
+    .todo-action-btn {
+      padding: 6px;
+      border: none;
+      background: none;
+      color: #8e9eb7;
+      cursor: pointer;
+      transition: color 0.2s;
+      border-radius: 4px;
+    }
+    .todo-action-btn:hover {
+      color: #1a1c37;
+      background-color: #edf2f7;
+    }
+    .add-todo-btn {
+      background-color: var(--baby-green);
+      color: #1a1c37;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 8px;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-weight: 500;
+    }
+    .add-todo-btn:hover {
+      background-color: #89c9b7;
+      color: #1a1c37;
+      text-decoration: none;
+    }
+    .todo-filters {
+      display: flex;
+      gap: 16px;
+      margin-bottom: 20px;
+    }
+    .filter-btn {
+      padding: 8px 16px;
+      border: 1px solid #edf2f7;
+      border-radius: 8px;
+      background: white;
+      color: #4a5568;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .filter-btn.active {
+      background-color: var(--baby-blue);
+      border-color: var(--baby-blue);
+      color: #1a1c37;
+    }
+    .empty-state {
+      text-align: center;
+      padding: 40px;
+    }
+    .empty-state-icon {
+      font-size: 48px;
+      color: var(--baby-blue);
+      margin-bottom: 16px;
+    }
+    .empty-state-text {
+      color: #8e9eb7;
+      margin-bottom: 24px;
+    }
+  </style>
+{% endblock %}
+
+{% block content %}
+  <div class="content-header">
+    <h1 class="content-title">Todo List</h1>
+    <a href="{{ url_for('add_todo') }}" class="add-todo-btn">
+      <i class="fas fa-plus"></i>
+      Add Todo
+    </a>
+  </div>
+
+  <div class="todo-container">
+    <div class="todo-filters">
+      <button class="filter-btn active" data-filter="all">All</button>
+      <button class="filter-btn" data-filter="today">Today</button>
+      <button class="filter-btn" data-filter="week">This Week</button>
+      <button class="filter-btn" data-filter="scheduled">Scheduled</button>
+      <button class="filter-btn" data-filter="unscheduled">Unscheduled</button>
+    </div>
+
+    {% if todos %}
+      {% for todo in todos %}
+        <div class="todo-item {% if todo.completed %}todo-completed{% endif %}">
+          <input type="checkbox" class="todo-checkbox" 
+                 {% if todo.completed %}checked{% endif %}
+                 data-todo-id="{{ todo.id }}">
+          <div class="todo-content">
+            <div class="todo-title">{{ todo.title }}</div>
+            {% if todo.description %}
+              <div class="todo-description">{{ todo.description }}</div>
+            {% endif %}
+            <div class="todo-meta">
+              {% if todo.week_number %}
+                <div class="todo-meta-item">
+                  <i class="fas fa-calendar-week"></i>
+                  Week {{ todo.week_number }}
+                </div>
+              {% endif %}
+              {% if todo.day_of_week %}
+                <div class="todo-meta-item">
+                  <i class="fas fa-calendar-day"></i>
+                  {{ todo.day_of_week }}
+                </div>
+              {% endif %}
+              {% if todo.time_of_day %}
+                <div class="todo-meta-item">
+                  <i class="fas fa-clock"></i>
+                  {{ todo.time_of_day.strftime('%I:%M %p') }}
+                </div>
+              {% endif %}
+            </div>
+          </div>
+          <div class="todo-actions">
+            <form action="{{ url_for('delete_todo', todo_id=todo.id) }}" method="POST" style="display: inline;">
+              <button type="submit" class="todo-action-btn" onclick="return confirm('Are you sure you want to delete this todo?')">
+                <i class="fas fa-trash"></i>
+              </button>
+            </form>
+          </div>
+        </div>
+      {% endfor %}
+    {% else %}
+      <div class="empty-state">
+        <div class="empty-state-icon">
+          <i class="fas fa-tasks"></i>
+        </div>
+        <div class="empty-state-text">No todos yet. Add your first todo to get started!</div>
+        <a href="{{ url_for('add_todo') }}" class="add-todo-btn">
+          <i class="fas fa-plus"></i>
+          Add Todo
+        </a>
+      </div>
+    {% endif %}
+  </div>
+{% endblock %}
+
+{% block scripts %}
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      // Handle todo checkbox toggles
+      document.querySelectorAll('.todo-checkbox').forEach(checkbox => {
+        checkbox.addEventListener('change', function() {
+          const todoId = this.dataset.todoId;
+          fetch(`/todos/${todoId}/toggle`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            }
+          })
+          .then(response => response.json())
+          .then(data => {
+            if (data.success) {
+              const todoItem = this.closest('.todo-item');
+              if (data.completed) {
+                todoItem.classList.add('todo-completed');
+              } else {
+                todoItem.classList.remove('todo-completed');
+              }
+            }
+          });
+        });
+      });
+
+      // Handle filters
+      document.querySelectorAll('.filter-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+          document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+          this.classList.add('active');
+          // TODO: Implement filtering logic
+        });
+      });
+    });
+  </script>
+{% endblock %}

@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - Sweet Escape{% endblock %}
+
+{% block additional_styles %}
+  #calendar {
+    color: #1a1c37;
+    padding: 24px;
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+  }
+  /* Calendar Customization */
+  .fc {
+    --fc-border-color: #edf2f7;
+    --fc-button-bg-color: var(--baby-green);
+    --fc-button-border-color: var(--baby-green);
+    --fc-button-hover-bg-color: #89c9b7;
+    --fc-button-hover-border-color: #89c9b7;
+    --fc-today-bg-color: #f8faf9;
+    --fc-event-bg-color: var(--baby-blue);
+    --fc-event-border-color: var(--baby-blue);
+    --fc-event-text-color: #1a1c37;
+  }
+{% endblock %}
+
+{% block content %}
+  <div class="content-header">
+    <h1 class="content-title">Calendar</h1>
+  </div>
+  <div id="calendar"></div>
+{% endblock %}
+
+{% block scripts %}
+  <script src="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      var calendarEl = document.getElementById('calendar');
+      var calendar = new FullCalendar.Calendar(calendarEl, {
+        initialView: 'dayGridMonth',
+        events: '/events',
+        headerToolbar: {
+          left: 'prev,next today',
+          center: 'title',
+          right: 'dayGridMonth,timeGridWeek'
+        },
+        buttonText: {
+          today: 'Today',
+          month: 'Month',
+          week: 'Week'
+        },
+        dayMaxEvents: true,
+        eventDisplay: 'block',
+        displayEventEnd: true,
+        eventTimeFormat: {
+          hour: '2-digit',
+          minute: '2-digit',
+          meridiem: false
+        },
+        firstDay: 1, // Start week on Monday
+        height: 800
+      });
+      calendar.render();
+    });
+  </script>
+{% endblock %}

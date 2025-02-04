@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>{% block title %}The Sweet Escape{% endblock %}</title>
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.css">
+  <link href='https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap' rel='stylesheet'>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
+  <style>
+    :root {
+      --baby-green: #98D8C6;
+      --baby-blue: #A5DEF1;
+      --baby-pink: #FFD5E5;
+      --baby-yellow: #FFF4BD;
+      --sidebar-width: 250px;
+    }
+    body {
+      background-color: #f8faf9;
+      color: #2d3436;
+      font-family: 'Inter', sans-serif;
+    }
+    .sidebar {
+      position: fixed;
+      left: 0;
+      top: 0;
+      bottom: 0;
+      width: var(--sidebar-width);
+      background-color: #1a1c37;
+      color: white;
+      padding: 2rem 1rem;
+      z-index: 1000;
+    }
+    .sidebar-brand {
+      font-size: 1.5rem;
+      font-weight: 600;
+      margin-bottom: 2rem;
+      color: white;
+      text-decoration: none;
+    }
+    .sidebar-brand:hover {
+      color: white;
+      text-decoration: none;
+    }
+    .create-new-btn {
+      background-color: var(--baby-green);
+      color: #1a1c37;
+      border: none;
+      border-radius: 8px;
+      padding: 0.75rem 1rem;
+      width: 100%;
+      font-weight: 500;
+      margin-bottom: 2rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+    }
+    .create-new-btn:hover {
+      background-color: #89c9b7;
+      color: #1a1c37;
+      text-decoration: none;
+    }
+    .nav-section {
+      margin-bottom: 2rem;
+    }
+    .nav-section-title {
+      text-transform: uppercase;
+      font-size: 0.75rem;
+      color: #8e9eb7;
+      margin-bottom: 1rem;
+      padding-left: 1rem;
+    }
+    .nav-items {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+    .nav-item {
+      margin-bottom: 0.5rem;
+    }
+    .nav-link {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.75rem 1rem;
+      color: #8e9eb7;
+      text-decoration: none;
+      border-radius: 8px;
+      transition: all 0.2s;
+    }
+    .nav-link:hover, .nav-link.active {
+      background-color: rgba(255, 255, 255, 0.1);
+      color: white;
+    }
+    .nav-link i {
+      width: 20px;
+      text-align: center;
+    }
+    .main-content {
+      margin-left: var(--sidebar-width);
+      padding: 2rem;
+    }
+    .content-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 2rem;
+    }
+    .content-title {
+      font-size: 1.5rem;
+      font-weight: 600;
+      color: #1a1c37;
+    }
+    {% block additional_styles %}{% endblock %}
+  </style>
+</head>
+<body>
+  <!-- Sidebar -->
+  <div class="sidebar">
+    <a href="#" class="sidebar-brand">The Sweet Escape</a>
+    <a href="{{ url_for('add_order') }}" class="create-new-btn">
+      <i class="fas fa-plus"></i>
+      Create New
+    </a>
+    
+    <div class="nav-section">
+      <div class="nav-section-title">Menu</div>
+      <ul class="nav-items">
+        <li class="nav-item">
+          <a href="{{ url_for('calendar') }}" class="nav-link {% if request.endpoint == 'calendar' %}active{% endif %}">
+            <i class="fas fa-th-large"></i>
+            Calendar
+          </a>
+        </li>
+        <li class="nav-item">
+          <a href="{{ url_for('clients') }}" class="nav-link {% if request.endpoint == 'clients' %}active{% endif %}">
+            <i class="fas fa-users"></i>
+            Clients
+          </a>
+        </li>
+        <li class="nav-item">
+          <a href="{{ url_for('messages') }}" class="nav-link {% if request.endpoint == 'messages' %}active{% endif %}">
+            <i class="fas fa-envelope"></i>
+            Messages
+          </a>
+        </li>
+        <li class="nav-item">
+          <a href="{{ url_for('todos') }}" class="nav-link {% if request.endpoint == 'todos' %}active{% endif %}">
+            <i class="fas fa-tasks"></i>
+            Todo List
+          </a>
+        </li>
+      </ul>
+    </div>
+    
+    <div class="nav-section">
+      <div class="nav-section-title">Your Account</div>
+      <ul class="nav-items">
+        <li class="nav-item">
+          <a href="{{ url_for('settings') }}" class="nav-link {% if request.endpoint == 'settings' %}active{% endif %}">
+            <i class="fas fa-cog"></i>
+            Settings
+          </a>
+        </li>
+        <li class="nav-item">
+          <a href="{{ url_for('logout') }}" class="nav-link">
+            <i class="fas fa-sign-out-alt"></i>
+            Logout
+          </a>
+        </li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- Main Content -->
+  <div class="main-content">
+    {% block content %}{% endblock %}
+  </div>
+
+  {% block scripts %}{% endblock %}
+</body>
+</html>

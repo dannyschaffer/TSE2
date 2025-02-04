@@ -1,0 +1,138 @@
+{% extends "base.html" %}
+
+{% block title %}Create Order - Sweet Escape{% endblock %}
+
+{% block additional_styles %}
+  <style>
+    .form-container {
+      background: white;
+      border-radius: 12px;
+      padding: 24px;
+      box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+    }
+    .form-group {
+      margin-bottom: 20px;
+    }
+    .form-label {
+      display: block;
+      margin-bottom: 8px;
+      color: #1a1c37;
+      font-weight: 500;
+    }
+    .form-control {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #edf2f7;
+      border-radius: 8px;
+      font-size: 1rem;
+      transition: border-color 0.2s;
+    }
+    .form-control:focus {
+      outline: none;
+      border-color: var(--baby-blue);
+    }
+    .submit-btn {
+      background-color: var(--baby-green);
+      color: #1a1c37;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 8px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background-color 0.2s;
+    }
+    .submit-btn:hover {
+      background-color: #89c9b7;
+    }
+    .cancel-btn {
+      background-color: var(--baby-pink);
+      color: #1a1c37;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 8px;
+      font-weight: 500;
+      text-decoration: none;
+      margin-right: 10px;
+      transition: background-color 0.2s;
+    }
+    .cancel-btn:hover {
+      background-color: #ffc4d4;
+      color: #1a1c37;
+      text-decoration: none;
+    }
+    .form-actions {
+      display: flex;
+      justify-content: flex-start;
+      align-items: center;
+      margin-top: 30px;
+    }
+    .form-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 20px;
+    }
+  </style>
+{% endblock %}
+
+{% block content %}
+  <div class="content-header">
+    <h1 class="content-title">Create New Order</h1>
+  </div>
+
+  <div class="form-container">
+    <form method="POST">
+      <div class="form-grid">
+        <div class="form-group">
+          <label class="form-label" for="order_number">Order Number *</label>
+          <input type="text" class="form-control" id="order_number" name="order_number" required>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="customer_name">Customer Name *</label>
+          <input type="text" class="form-control" id="customer_name" name="customer_name" required>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="telephone">Telephone *</label>
+          <input type="tel" class="form-control" id="telephone" name="telephone" required>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="email">Email *</label>
+          <input type="email" class="form-control" id="email" name="email" required>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="order_date">Order Date *</label>
+          <input type="date" class="form-control" id="order_date" name="order_date" required>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="communication_channel">Communication Channel *</label>
+          <select class="form-control" id="communication_channel" name="communication_channel" required>
+            <option value="">Select a channel</option>
+            <option value="email">Email</option>
+            <option value="whatsapp">WhatsApp</option>
+          </select>
+        </div>
+
+        {% if clients %}
+        <div class="form-group">
+          <label class="form-label" for="client_id">Link to Existing Client</label>
+          <select class="form-control" id="client_id" name="client_id">
+            <option value="">Select a client (optional)</option>
+            {% for client in clients %}
+            <option value="{{ client.id }}">{{ client.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        {% endif %}
+      </div>
+
+      <div class="form-actions">
+        <a href="{{ url_for('calendar') }}" class="cancel-btn">Cancel</a>
+        <button type="submit" class="submit-btn">Create Order</button>
+      </div>
+    </form>
+  </div>
+{% endblock %}
