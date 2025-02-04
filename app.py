@@ -488,24 +488,4 @@ def test_db():
         test_query = db.session.execute(text('SELECT 1')).fetchone()
         connection_status = 'Connected successfully!'
         
-        # Get some basic stats
-        client_count = Client.query.count()
-        order_count = Order.query.count()
-        
-        return jsonify({
-            'database_type': db_type,
-            'connection_status': connection_status,
-            'stats': {
-                'clients': client_count,
-                'orders': order_count
-            }
-        })
-    except Exception as e:
-        return jsonify({
-            'database_type': db_type,
-            'connection_status': f'Connection failed: {str(e)}',
-            'stats': None
-        }), 500
-
-if __name__ == '__main__':
-    app.run(debug=True, port=5001)
+        # Get some 
