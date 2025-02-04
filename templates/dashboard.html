@@ -18,25 +18,44 @@
     --fc-button-hover-bg-color: #89c9b7;
     --fc-button-hover-border-color: #89c9b7;
     --fc-today-bg-color: #f8faf9;
-    --fc-event-bg-color: var(--baby-blue);
-    --fc-event-border-color: var(--baby-blue);
-    --fc-event-text-color: #1a1c37;
+  }
+  
+  .tippy-box {
+    background-color: white;
+    color: #1a1c37;
+    border-radius: 4px;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+  }
+
+  .tippy-box h4 {
+    margin: 0 0 8px 0;
+    font-size: 16px;
+    font-weight: 600;
+  }
+
+  .tippy-box p {
+    margin: 4px 0;
+    font-size: 14px;
   }
 {% endblock %}
 
 {% block content %}
   <div class="content-header">
     <h1 class="content-title">Calendar</h1>
+    <div class="content-actions">
+      <a href="{{ url_for('create_order') }}" class="btn btn-primary">Create Order</a>
+    </div>
   </div>
   <div id="calendar"></div>
 {% endblock %}
 
 {% block scripts %}
   <script src="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.js"></script>
+  <script src="https://unpkg.com/@popperjs/core@2"></script>
+  <script src="https://unpkg.com/tippy.js@6"></script>
   <script>
     document.addEventListener('DOMContentLoaded', function() {
-      var calendarEl = document.getElementById('calendar');
-      var calendar = new FullCalendar.Calendar(calendarEl, {
+      var calendar = new FullCalendar.Calendar(document.getElementById('calendar'), {
         initialView: 'dayGridMonth',
         events: '/events',
         headerToolbar: {
@@ -58,8 +77,55 @@
           meridiem: false
         },
         firstDay: 1, // Start week on Monday
-        height: 800
+        height: 800,
+        eventDidMount: function(info) {
+          const event = info.event;
+          const props = event.extendedProps;
+          let content = '';
+          
+          if (props.type === 'order') {
+            content = `
+              <div style="padding: 8px;">
+                <h4>${event.title}</h4>
+                <div style="margin-bottom: 12px;">
+                  <p><strong>Customer:</strong> ${props.customerName}</p>
+                  <p><strong>Contact:</strong> ${props.telephone}</p>
+                  <p><strong>Email:</strong> ${props.email}</p>
+                </div>
+                <div style="margin-bottom: 12px;">
+                  <p><strong>Details:</strong></p>
+                  <p>${props.details}</p>
+                </div>
+                ${props.deliveryRequired ? `
+                <div>
+                  <p><strong>Delivery:</strong></p>
+                  <p>${props.deliveryAddress}</p>
+                  <p>${props.deliveryInstructions}</p>
+                </div>
+                ` : ''}
+              </div>
+            `;
+          } else if (props.type === 'todo') {
+            content = `
+              <div>
+                <h4>${event.title}</h4>
+                <p><strong>Description:</strong> ${props.description}</p>
+                <p><strong>Status:</strong> ${props.completed ? 'Completed' : 'Pending'}</p>
+              </div>
+            `;
+          }
+          
+          tippy(info.el, {
+            content: content,
+            allowHTML: true,
+            placement: 'bottom',
+            interactive: true,
+            theme: 'light',
+            maxWidth: 300
+          });
+        }
       });
+      
       calendar.render();
     });
   </script>

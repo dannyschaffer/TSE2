@@ -2,15 +2,25 @@ from flask import Flask, render_template, request, redirect, url_for, session, f
 from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime, timedelta, date
 from apscheduler.schedulers.background import BackgroundScheduler
+from dotenv import load_dotenv
 import os
+from flask_wtf import FlaskForm
+from wtforms import StringField, DateField, SelectField, TextAreaField, BooleanField
+from wtforms.validators import DataRequired, Email
+
+# Load environment variables from .env file
+load_dotenv()
 
 app = Flask(__name__)
-app.secret_key = 'supersecretkey'  # For demo purposes only. In production, use a secure, random key.
+app.secret_key = os.getenv('SECRET_KEY')  # Load secret key from .env file
 
 # Configure database
-BASE_DIR = os.path.abspath(os.path.dirname(__file__))
-db_path = os.path.join(BASE_DIR, 'orders.db')
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + db_path
+db_url = os.getenv('SUPABASE_DB_URL')
+if not db_url:
+    BASE_DIR = os.path.abspath(os.path.dirname(__file__))
+    db_path = os.path.join(BASE_DIR, 'orders.db')
+    db_url = 'sqlite:///' + db_path
+app.config['SQLALCHEMY_DATABASE_URI'] = db_url
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 # Initialize database
@@ -42,7 +52,13 @@ class Order(db.Model):
     message_sent = db.Column(db.Boolean, default=False, nullable=False)
     message_scheduled_date = db.Column(db.DateTime)
     message_template_id = db.Column(db.Integer, db.ForeignKey('message_template.id'), nullable=True)
-
+    
+    # Order details
+    details = db.Column(db.Text)  # Detailed description of the order
+    delivery_required = db.Column(db.Boolean, default=False)
+    delivery_address = db.Column(db.Text)
+    delivery_instructions = db.Column(db.Text)
+    
     def __repr__(self):
         return f"<Order {self.order_number}>"
 
@@ -80,6 +96,20 @@ with app.app_context():
 # Simple login check. For MVP, we use hard-coded credentials
 USERNAME = 'admin'
 PASSWORD = 'password'
+
+class OrderForm(FlaskForm):
+    customer_name = StringField('Customer Name', validators=[DataRequired()])
+    telephone = StringField('Telephone', validators=[DataRequired()])
+    email = StringField('Email', validators=[DataRequired(), Email()])
+    order_date = DateField('Order Date', validators=[DataRequired()])
+    communication_channel = SelectField('Preferred Communication', 
+                                     choices=[('email', 'Email'), ('whatsapp', 'WhatsApp')],
+                                     validators=[DataRequired()])
+    details = TextAreaField('Order Details', validators=[DataRequired()],
+                          description="Enter all cake details including: type, size, flavor, filling, decorations, and any dietary requirements")
+    delivery_required = BooleanField('Delivery Required')
+    delivery_address = TextAreaField('Delivery Address')
+    delivery_instructions = TextAreaField('Delivery Instructions')
 
 @app.route('/')
 def index():
@@ -210,93 +240,28 @@ def preview_message():
 def settings():
     return render_template('settings.html')
 
-# Add Order
-@app.route('/orders/add', methods=['GET', 'POST'])
-def add_order():
-    clients = Client.query.order_by(Client.name).all()
-    if request.method == 'POST':
-        order_number = request.form.get('order_number')
-        customer_name = request.form.get('customer_name')
-        telephone = request.form.get('telephone')
-        email = request.form.get('email')
-        order_date_str = request.form.get('order_date')
-        communication_channel = request.form.get('communication_channel')
-        
-        try:
-            order_date = datetime.strptime(order_date_str, '%Y-%m-%d').date()
-        except Exception as e:
-            flash('Invalid date format. Use YYYY-MM-DD.')
-            return redirect(url_for('add_order'))
-
-        # First, try to find an existing client by email or phone
-        client = Client.query.filter(
-            (Client.email == email) | (Client.phone == telephone)
-        ).first()
-
-        # If no existing client found, create a new one
-        if not client:
-            client = Client(
-                name=customer_name,
-                email=email,
-                phone=telephone
-            )
-            db.session.add(client)
-            db.session.flush()  # This gets us the client.id before committing
-
-        new_order = Order(
-            order_number=order_number,
-            customer_name=customer_name,
-            telephone=telephone,
-            email=email,
-            order_date=order_date,
-            communication_channel=communication_channel,
-            client_id=client.id
-        )
-        db.session.add(new_order)
-        
-        try:
-            db.session.commit()
-            flash('Order added successfully.')
-        except Exception as e:
-            db.session.rollback()
-            flash('Error creating order. Please try again.')
-            print(f"Error: {str(e)}")
-            
-        return redirect(url_for('calendar'))
-        
-    return render_template('add_order.html', clients=clients)
-
 # Edit Order
-@app.route('/orders/edit/<int:order_id>', methods=['GET', 'POST'])
+@app.route('/orders/<int:order_id>/edit', methods=['GET', 'POST'])
 def edit_order(order_id):
     order = Order.query.get_or_404(order_id)
-    clients = Client.query.order_by(Client.name).all()
-    if request.method == 'POST':
-        order.order_number = request.form.get('order_number')
-        order.customer_name = request.form.get('customer_name')
-        order.telephone = request.form.get('tel')
-        order.email = request.form.get('email')
-        order_date_str = request.form.get('order_date')
-        try:
-            order.order_date = datetime.strptime(order_date_str, '%Y-%m-%d').date()
-        except Exception as e:
-            flash('Invalid date format. Use YYYY-MM-DD.')
-            return redirect(url_for('edit_order', order_id=order_id))
-        order.communication_channel = request.form.get('communication_channel')
-        order.client_id = request.form.get('client_id')
+    form = OrderForm(obj=order)
+    
+    if form.validate_on_submit():
+        form.populate_obj(order)
         db.session.commit()
-        flash('Order updated successfully.')
-        return redirect(url_for('calendar'))
-    return render_template('edit_order.html', order=order, clients=clients)
+        flash('Order updated successfully!', 'success')
+        return redirect(url_for('orders'))
+    
+    return render_template('edit_order.html', form=form, order=order)
 
 # Delete Order
-@app.route('/orders/delete/<int:order_id>', methods=['POST'])
+@app.route('/orders/<int:order_id>/delete', methods=['POST'])
 def delete_order(order_id):
     order = Order.query.get_or_404(order_id)
     db.session.delete(order)
     db.session.commit()
-    flash('Order deleted successfully.')
-    return redirect(url_for('calendar'))
+    flash('Order deleted successfully!', 'success')
+    return redirect(url_for('orders'))
 
 # Add Todo
 @app.route('/todos')
@@ -342,6 +307,53 @@ def delete_todo(todo_id):
     db.session.commit()
     flash('Todo deleted successfully!')
     return redirect(url_for('todos'))
+
+# Orders
+@app.route('/orders')
+def orders():
+    orders = Order.query.order_by(Order.order_date.desc()).all()
+    return render_template('orders.html', orders=orders)
+
+@app.route('/orders/create', methods=['GET', 'POST'])
+def create_order():
+    form = OrderForm()
+    clients = Client.query.order_by(Client.name).all()
+
+    if form.validate_on_submit():
+        order = Order(
+            order_number=generate_order_number(),
+            customer_name=form.customer_name.data,
+            telephone=form.telephone.data,
+            email=form.email.data,
+            order_date=form.order_date.data,
+            communication_channel=form.communication_channel.data,
+            details=form.details.data,
+            delivery_required=form.delivery_required.data,
+            delivery_address=form.delivery_address.data,
+            delivery_instructions=form.delivery_instructions.data,
+            client_id=request.form.get('client_id')  # Get client_id from form
+        )
+        db.session.add(order)
+        db.session.commit()
+        flash('Order created successfully!', 'success')
+        return redirect(url_for('orders'))
+    return render_template('create_order.html', form=form, clients=clients)
+
+def generate_order_number():
+    """Generate a unique order number in the format TSE-YYYY-XXX"""
+    year = datetime.now().year
+    # Get the last order number for this year
+    last_order = Order.query.filter(
+        Order.order_number.like(f'TSE-{year}-%')
+    ).order_by(Order.order_number.desc()).first()
+    
+    if last_order:
+        # Extract the sequence number and increment
+        seq = int(last_order.order_number.split('-')[-1]) + 1
+    else:
+        seq = 1
+    
+    return f'TSE-{year}-{seq:03d}'
 
 # Stub functions to simulate sending messages
 
@@ -414,15 +426,86 @@ def schedule_order_messages():
 
 @app.route('/events')
 def events():
+    # Get all orders
     orders = Order.query.all()
-    events = []
-    for order in orders:
-        events.append({
-            'id': order.id,
-            'title': f"Order {order.order_number}",
-            'start': order.order_date.isoformat()
-        })
+    order_events = [{
+        'title': order.order_number,
+        'start': order.order_date.isoformat(),
+        'backgroundColor': '#AED9E0',  # baby blue
+        'borderColor': '#AED9E0',
+        'extendedProps': {
+            'type': 'order',
+            'customerName': order.customer_name,
+            'telephone': order.telephone,
+            'email': order.email,
+            'details': order.details,
+            'deliveryRequired': order.delivery_required,
+            'deliveryAddress': order.delivery_address,
+            'deliveryInstructions': order.delivery_instructions
+        }
+    } for order in orders]
+
+    # Get all todos with datetime
+    todos = Todo.query.filter(
+        Todo.week_number.isnot(None),
+        Todo.day_of_week.isnot(None),
+        Todo.time_of_day.isnot(None)
+    ).all()
+
+    # Convert todos to events
+    todo_events = []
+    for todo in todos:
+        # Calculate the date for this todo based on week number and day of week
+        year = datetime.now().year
+        todo_date = datetime.strptime(f'{year}-W{todo.week_number}-{todo.day_of_week[:3].upper()}', '%Y-W%W-%a')
+        if todo.time_of_day:
+            # Combine date and time
+            todo_datetime = datetime.combine(todo_date.date(), todo.time_of_day)
+            todo_events.append({
+                'title': todo.title,
+                'start': todo_datetime.isoformat(),
+                'backgroundColor': '#FFC0CB',  # pink
+                'borderColor': '#FFC0CB',
+                'extendedProps': {
+                    'type': 'todo',
+                    'description': todo.description,
+                    'completed': todo.completed
+                }
+            })
+
+    # Combine and return all events
+    events = order_events + todo_events
     return jsonify(events)
 
+@app.route('/test-db')
+def test_db():
+    # Get database connection info
+    db_type = 'Supabase (PostgreSQL)' if 'postgresql' in str(db.engine.url) else 'SQLite'
+    
+    try:
+        # Try to query the database
+        from sqlalchemy import text
+        test_query = db.session.execute(text('SELECT 1')).fetchone()
+        connection_status = 'Connected successfully!'
+        
+        # Get some basic stats
+        client_count = Client.query.count()
+        order_count = Order.query.count()
+        
+        return jsonify({
+            'database_type': db_type,
+            'connection_status': connection_status,
+            'stats': {
+                'clients': client_count,
+                'orders': order_count
+            }
+        })
+    except Exception as e:
+        return jsonify({
+            'database_type': db_type,
+            'connection_status': f'Connection failed: {str(e)}',
+            'stats': None
+        }), 500
+
 if __name__ == '__main__':
-    app.run(debug=True, port=5000)
+    app.run(debug=True, port=5001)

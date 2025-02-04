@@ -32,29 +32,34 @@
       z-index: 1000;
     }
     .sidebar-brand {
-      font-size: 1.5rem;
-      font-weight: 600;
-      margin-bottom: 2rem;
-      color: white;
+      display: block;
       text-decoration: none;
+      color: white;
+      font-size: 1.25rem;
+      font-weight: 600;
+      padding: 1rem;
+      margin-bottom: 0.5rem;
+      text-align: center;
+      position: relative;
+      top: -0.5rem;
     }
     .sidebar-brand:hover {
-      color: white;
+      color: var(--baby-green);
       text-decoration: none;
     }
     .create-new-btn {
-      background-color: var(--baby-green);
-      color: #1a1c37;
-      border: none;
-      border-radius: 8px;
-      padding: 0.75rem 1rem;
-      width: 100%;
-      font-weight: 500;
-      margin-bottom: 2rem;
       display: flex;
       align-items: center;
       justify-content: center;
       gap: 0.5rem;
+      margin: 0 1rem 1rem;
+      padding: 0.75rem;
+      background-color: var(--baby-green);
+      color: #1a1c37;
+      text-decoration: none;
+      border-radius: 6px;
+      font-weight: 500;
+      transition: background-color 0.2s;
     }
     .create-new-btn:hover {
       background-color: #89c9b7;
@@ -119,7 +124,7 @@
   <!-- Sidebar -->
   <div class="sidebar">
     <a href="#" class="sidebar-brand">The Sweet Escape</a>
-    <a href="{{ url_for('add_order') }}" class="create-new-btn">
+    <a href="{{ url_for('create_order') }}" class="create-new-btn">
       <i class="fas fa-plus"></i>
       Create New
     </a>
@@ -131,6 +136,12 @@
           <a href="{{ url_for('calendar') }}" class="nav-link {% if request.endpoint == 'calendar' %}active{% endif %}">
             <i class="fas fa-th-large"></i>
             Calendar
+          </a>
+        </li>
+        <li class="nav-item">
+          <a href="{{ url_for('orders') }}" class="nav-link {% if request.endpoint == 'orders' %}active{% endif %}">
+            <i class="fas fa-file-invoice"></i>
+            Orders
           </a>
         </li>
         <li class="nav-item">

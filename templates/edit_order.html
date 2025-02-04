@@ -1,52 +1,113 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="utf-8">
-    <title>Edit Order - Sweet Escape</title>
-    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
-    <style>
-        body { background-color: #f2f3d9; color: #2f242c; }
-        .container { margin-top: 50px; max-width: 600px; }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <h2 class="text-center">Edit Order</h2>
-        <form method="POST">
-            <div class="form-group">
-                <label for="order_number">Order Number</label>
-                <input type="text" class="form-control" id="order_number" name="order_number" value="{{ order.order_number }}" required>
-            </div>
-            <div class="form-group">
-                <label for="customer_name">Customer Name</label>
-                <input type="text" class="form-control" id="customer_name" name="customer_name" value="{{ order.customer_name }}" required>
-            </div>
-            <div class="form-group">
-                <label for="tel">Telephone</label>
-                <input type="tel" class="form-control" id="tel" name="tel" value="{{ order.telephone }}" required>
-            </div>
-            <div class="form-group">
-                <label for="email">Email</label>
-                <input type="email" class="form-control" id="email" name="email" value="{{ order.email }}" required>
-            </div>
-            <div class="form-group">
-                <label for="order_date">Order Date (YYYY-MM-DD)</label>
-                <input type="date" class="form-control" id="order_date" name="order_date" value="{{ order.order_date }}" required>
-            </div>
-            <div class="form-group">
-                <label>Communication Channel</label><br>
-                <div class="form-check form-check-inline">
-                    <input class="form-check-input" type="radio" name="communication_channel" id="email_channel" value="email" {% if order.communication_channel == 'email' %}checked{% endif %}>
-                    <label class="form-check-label" for="email_channel">Email</label>
-                </div>
-                <div class="form-check form-check-inline">
-                    <input class="form-check-input" type="radio" name="communication_channel" id="whatsapp_channel" value="whatsapp" {% if order.communication_channel == 'whatsapp' %}checked{% endif %}>
-                    <label class="form-check-label" for="whatsapp_channel">WhatsApp</label>
-                </div>
-            </div>
-            <button type="submit" class="btn btn-success">Update Order</button>
-            <a href="{{ url_for('dashboard') }}" class="btn btn-secondary">Cancel</a>
-        </form>
+{% extends "base.html" %}
+
+{% block title %}Edit Order - Sweet Escape{% endblock %}
+
+{% block additional_styles %}
+  .form-container {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 24px;
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+  }
+
+  .form-section {
+    margin-bottom: 24px;
+    padding-bottom: 24px;
+    border-bottom: 1px solid #edf2f7;
+  }
+
+  .form-section:last-child {
+    border-bottom: none;
+  }
+
+  textarea {
+    min-height: 120px;
+  }
+{% endblock %}
+
+{% block content %}
+<div class="content-header">
+  <h1 class="content-title">Edit Order {{ order.order_number }}</h1>
+</div>
+
+<div class="form-container">
+  <form method="POST">
+    {{ form.csrf_token }}
+    
+    <div class="form-section">
+      <h3>Customer Information</h3>
+      <div class="form-group">
+        {{ form.customer_name.label }}
+        {{ form.customer_name(class="form-control") }}
+      </div>
+      <div class="form-group">
+        {{ form.telephone.label }}
+        {{ form.telephone(class="form-control") }}
+      </div>
+      <div class="form-group">
+        {{ form.email.label }}
+        {{ form.email(class="form-control") }}
+      </div>
+      <div class="form-group">
+        {{ form.communication_channel.label }}
+        {{ form.communication_channel(class="form-control") }}
+      </div>
     </div>
-</body>
-</html>
+
+    <div class="form-section">
+      <h3>Order Details</h3>
+      <div class="form-group">
+        {{ form.order_date.label }}
+        {{ form.order_date(class="form-control", type="date") }}
+      </div>
+      <div class="form-group">
+        {{ form.details.label }}
+        {{ form.details(class="form-control", rows="6", placeholder="Enter all cake details including: type, size, flavor, filling, decorations, and any dietary requirements") }}
+      </div>
+    </div>
+
+    <div class="form-section">
+      <h3>Delivery Information</h3>
+      <div class="form-group">
+        <div class="custom-control custom-checkbox">
+          {{ form.delivery_required(class="custom-control-input") }}
+          {{ form.delivery_required.label(class="custom-control-label") }}
+        </div>
+      </div>
+      <div id="delivery-fields" style="display: none;">
+        <div class="form-group">
+          {{ form.delivery_address.label }}
+          {{ form.delivery_address(class="form-control") }}
+        </div>
+        <div class="form-group">
+          {{ form.delivery_instructions.label }}
+          {{ form.delivery_instructions(class="form-control") }}
+        </div>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <button type="submit" class="btn btn-primary">Save Changes</button>
+      <a href="{{ url_for('orders') }}" class="btn btn-secondary">Cancel</a>
+    </div>
+  </form>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    const deliveryRequired = document.getElementById('delivery_required');
+    const deliveryFields = document.getElementById('delivery-fields');
+
+    function toggleDeliveryFields() {
+      deliveryFields.style.display = deliveryRequired.checked ? 'block' : 'none';
+    }
+
+    deliveryRequired.addEventListener('change', toggleDeliveryFields);
+    toggleDeliveryFields(); // Initial state
+  });
+</script>
+{% endblock %}
