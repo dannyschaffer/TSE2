@@ -22,7 +22,7 @@ if not db_url:
     db_url = 'sqlite:///' + db_path
 else:
     # For production environment (Render)
-    ssl_params = "?sslmode=require"
+    ssl_params = "?sslmode=prefer"
     if '?' in db_url:
         db_url = db_url.split('?')[0] + ssl_params
     else:
@@ -30,6 +30,11 @@ else:
     
 app.config['SQLALCHEMY_DATABASE_URI'] = db_url
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
+    'connect_args': {
+        'sslmode': 'prefer'
+    }
+}
 
 # Initialize database
 db = SQLAlchemy(app)
