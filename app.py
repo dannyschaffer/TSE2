@@ -350,12 +350,13 @@ def create_order():
                 if existing_client:
                     client_id = existing_client.id
                 else:
-                    # Create new client
+                    # Create new client with correct field names
                     new_client = Client(
                         name=form.customer_name.data,
-                        telephone=form.telephone.data,
+                        phone=form.telephone.data,  # Changed from telephone to phone
                         email=form.email.data,
-                        communication_channel=form.communication_channel.data
+                        address=form.delivery_address.data if form.delivery_required.data else None,
+                        notes=form.details.data
                     )
                     db.session.add(new_client)
                     db.session.flush()  # This gets us the new client's ID
