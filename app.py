@@ -7,7 +7,7 @@ from dotenv import load_dotenv
 import os
 from flask_wtf import FlaskForm
 from wtforms import StringField, DateField, SelectField, TextAreaField, BooleanField
-from wtforms.validators import DataRequired, Email
+from wtforms.validators import DataRequired, Email, Optional
 from apscheduler.schedulers import SchedulerAlreadyRunningError
 from sqlalchemy import text
 import random
@@ -117,13 +117,15 @@ PASSWORD = 'password'
 class OrderForm(FlaskForm):
     customer_name = StringField('Customer Name', validators=[DataRequired()])
     telephone = StringField('Telephone', validators=[DataRequired()])
-    email = StringField('Email', validators=[DataRequired(), Email()])
+    email = StringField('Email', validators=[Email()])
     order_date = DateField('Order Date', validators=[DataRequired()])
-    communication_channel = SelectField('Preferred Communication', 
-                                     choices=[('email', 'Email'), ('whatsapp', 'WhatsApp')],
-                                     validators=[DataRequired()])
-    details = TextAreaField('Order Details', validators=[DataRequired()],
-                          description="Enter all cake details including: type, size, flavor, filling, decorations, and any dietary requirements")
+    communication_channel = SelectField('Communication Channel', 
+        choices=[('whatsapp', 'WhatsApp'), ('email', 'Email'), ('sms', 'SMS')],
+        validators=[DataRequired()])
+    client_id = SelectField('Client', coerce=lambda x: int(x) if x else None,
+        choices=lambda: [(str(c.id), c.name) for c in Client.query.all()] + [('', 'No Client')],
+        validators=[Optional()])
+    details = TextAreaField('Order Details')
     delivery_required = BooleanField('Delivery Required')
     delivery_address = TextAreaField('Delivery Address')
     delivery_instructions = TextAreaField('Delivery Instructions')
@@ -335,14 +337,12 @@ def orders():
 def create_order():
     form = OrderForm()
     clients = Client.query.order_by(Client.name).all()
+    form.client_id.choices = [(str(c.id), c.name) for c in clients] + [('', 'No Client')]
 
     if form.validate_on_submit():
         # Generate order number
         today = datetime.now()
         order_number = f"TSE-{today.year}-{str(today.month).zfill(2)}-{str(today.day).zfill(2)}-{str(random.randint(1, 999)).zfill(3)}"
-        
-        # Convert empty string to None for client_id
-        client_id = form.client_id.data if form.client_id.data else None
         
         order = Order(
             order_number=order_number,
@@ -351,7 +351,7 @@ def create_order():
             email=form.email.data,
             order_date=form.order_date.data,
             communication_channel=form.communication_channel.data,
-            client_id=client_id,  # Use the processed client_id
+            client_id=form.client_id.data,  # This will now be None if no client selected
             details=form.details.data,
             delivery_required=form.delivery_required.data,
             delivery_address=form.delivery_address.data,
@@ -367,7 +367,7 @@ def create_order():
             db.session.rollback()
             app.logger.error(f"Error creating order: {str(e)}", exc_info=True)
             flash('An error occurred while creating the order.', 'error')
-            return render_template('create_order.html', form=form)
+            return render_template('create_order.html', form=form, clients=clients)
     return render_template('create_order.html', form=form, clients=clients)
 
 def generate_order_number():
