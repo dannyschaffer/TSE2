@@ -21,11 +21,12 @@ if not db_url:
     db_path = os.path.join(BASE_DIR, 'orders.db')
     db_url = 'sqlite:///' + db_path
 else:
-    # Ensure proper SSL configuration for Supabase
+    # Add comprehensive SSL parameters for Supabase
+    ssl_params = "?sslmode=verify-full&sslcert=none&sslkey=none&sslrootcert=none"
     if '?' in db_url:
-        db_url = db_url + "&sslmode=require"
+        db_url = db_url.split('?')[0] + ssl_params
     else:
-        db_url = db_url + "?sslmode=require"
+        db_url = db_url + ssl_params
     
 app.config['SQLALCHEMY_DATABASE_URI'] = db_url
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
