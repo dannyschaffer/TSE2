@@ -57,4 +57,25 @@ def add_test_data():
             ),
             Todo(
                 title="Design new summer collection",
-                description="Cre
+                description="Create 5 new cake designs for summer",
+                week_number=datetime.now().isocalendar()[1],
+                day_of_week="Wednesday",
+                time_of_day=datetime.strptime("14:00", "%H:%M").time()
+            ),
+            Todo(
+                title="Client Meeting: Wedding Cake Tasting",
+                description="Prepare 3 different cake samples for tasting session",
+                week_number=datetime.now().isocalendar()[1],
+                day_of_week="Friday",
+                time_of_day=datetime.strptime("15:30", "%H:%M").time()
+            )
+        ]
+        for todo in todos:
+            db.session.add(todo)
+        
+        # Commit all changes
+        db.session.commit()
+        print("Test data added successfully!")
+
+if __name__ == "__main__":
+    add_test_data()
