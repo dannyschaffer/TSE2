@@ -10,6 +10,7 @@ from wtforms import StringField, DateField, SelectField, TextAreaField, BooleanF
 from wtforms.validators import DataRequired, Email
 from apscheduler.schedulers import SchedulerAlreadyRunningError
 from sqlalchemy import text
+import random
 
 # Load environment variables from .env file
 load_dotenv()
@@ -336,23 +337,37 @@ def create_order():
     clients = Client.query.order_by(Client.name).all()
 
     if form.validate_on_submit():
+        # Generate order number
+        today = datetime.now()
+        order_number = f"TSE-{today.year}-{str(today.month).zfill(2)}-{str(today.day).zfill(2)}-{str(random.randint(1, 999)).zfill(3)}"
+        
+        # Convert empty string to None for client_id
+        client_id = form.client_id.data if form.client_id.data else None
+        
         order = Order(
-            order_number=generate_order_number(),
+            order_number=order_number,
             customer_name=form.customer_name.data,
             telephone=form.telephone.data,
             email=form.email.data,
             order_date=form.order_date.data,
             communication_channel=form.communication_channel.data,
+            client_id=client_id,  # Use the processed client_id
             details=form.details.data,
             delivery_required=form.delivery_required.data,
             delivery_address=form.delivery_address.data,
-            delivery_instructions=form.delivery_instructions.data,
-            client_id=request.form.get('client_id')  # Get client_id from form
+            delivery_instructions=form.delivery_instructions.data
         )
-        db.session.add(order)
-        db.session.commit()
-        flash('Order created successfully!', 'success')
-        return redirect(url_for('orders'))
+        
+        try:
+            db.session.add(order)
+            db.session.commit()
+            flash('Order created successfully!', 'success')
+            return redirect(url_for('calendar'))
+        except Exception as e:
+            db.session.rollback()
+            app.logger.error(f"Error creating order: {str(e)}", exc_info=True)
+            flash('An error occurred while creating the order.', 'error')
+            return render_template('create_order.html', form=form)
     return render_template('create_order.html', form=form, clients=clients)
 
 def generate_order_number():
