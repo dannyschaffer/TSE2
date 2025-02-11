@@ -19,14 +19,13 @@ app.secret_key = os.getenv('SECRET_KEY')  # Load secret key from .env file
 
 # Configure database URI and engine options
 if os.getenv('SUPABASE_DB_URL'):
-    app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('SUPABASE_DB_URL')
+    db_url = os.getenv('SUPABASE_DB_URL')
+    if '?' in db_url:
+        db_url = db_url.split('?')[0]
+    db_url += '?sslmode=require'
+    
+    app.config['SQLALCHEMY_DATABASE_URI'] = db_url
     app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
-        'connect_args': {
-            'sslmode': 'verify-full',
-            'sslcert': None,
-            'sslkey': None,
-            'sslrootcert': '/etc/ssl/certs/ca-certificates.crt'
-        },
         'pool_pre_ping': True,
         'pool_recycle': 300,
         'pool_size': 10,
@@ -504,4 +503,56 @@ def events():
     todo_events = []
     for todo in todos:
         # Calculate the date for this todo based on week number and day of week
-        year = datetime.now().y
+        year = datetime.now().year
+        todo_date = datetime.strptime(f'{year}-W{todo.week_number}-{todo.day_of_week[:3].upper()}', '%Y-W%W-%a')
+        if todo.time_of_day:
+            # Combine date and time
+            todo_datetime = datetime.combine(todo_date.date(), todo.time_of_day)
+            todo_events.append({
+                'title': todo.title,
+                'start': todo_datetime.isoformat(),
+                'backgroundColor': '#FFC0CB',  # pink
+                'borderColor': '#FFC0CB',
+                'extendedProps': {
+                    'type': 'todo',
+                    'description': todo.description,
+                    'completed': todo.completed
+                }
+            })
+
+    # Combine and return all events
+    events = order_events + todo_events
+    return jsonify(events)
+
+@app.route('/test-db')
+def test_db():
+    # Get database connection info
+    db_type = 'Supabase (PostgreSQL)' if 'postgresql' in str(db.engine.url) else 'SQLite'
+    
+    try:
+        # Try to query the database
+        from sqlalchemy import text
+        test_query = db.session.execute(text('SELECT 1')).fetchone()
+        connection_status = 'Connected successfully!'
+        
+        # Get some basic stats
+        client_count = Client.query.count()
+        order_count = Order.query.count()
+        
+        return jsonify({
+            'database_type': db_type,
+            'connection_status': connection_status,
+            'stats': {
+                'clients': client_count,
+                'orders': order_count
+            }
+        })
+    except Exception as e:
+        return jsonify({
+            'database_type': db_type,
+            'connection_status': f'Connection failed: {str(e)}',
+            'stats': None
+        }), 500
+
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', port=os.getenv('PORT', 5001))
