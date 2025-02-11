@@ -21,8 +21,8 @@ if not db_url:
     db_path = os.path.join(BASE_DIR, 'orders.db')
     db_url = 'sqlite:///' + db_path
 else:
-    # Use system SSL certificates
-    ssl_params = "?sslmode=verify-full&sslrootcert=system"
+    # For production environment (Render)
+    ssl_params = "?sslmode=require"
     if '?' in db_url:
         db_url = db_url.split('?')[0] + ssl_params
     else:
