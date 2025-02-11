@@ -1,5 +1,6 @@
 from flask import Flask, render_template, request, redirect, url_for, session, flash, jsonify
 from flask_sqlalchemy import SQLAlchemy
+from flask_apscheduler import APScheduler
 from datetime import datetime, timedelta, date
 from apscheduler.schedulers.background import BackgroundScheduler
 from dotenv import load_dotenv
@@ -7,6 +8,8 @@ import os
 from flask_wtf import FlaskForm
 from wtforms import StringField, DateField, SelectField, TextAreaField, BooleanField
 from wtforms.validators import DataRequired, Email
+from apscheduler.schedulers import SchedulerAlreadyRunningError
+from sqlalchemy import text
 
 # Load environment variables from .env file
 load_dotenv()
@@ -14,27 +17,27 @@ load_dotenv()
 app = Flask(__name__)
 app.secret_key = os.getenv('SECRET_KEY')  # Load secret key from .env file
 
-# Configure database
-db_url = os.getenv('SUPABASE_DB_URL')
-if not db_url:
-    BASE_DIR = os.path.abspath(os.path.dirname(__file__))
-    db_path = os.path.join(BASE_DIR, 'orders.db')
-    db_url = 'sqlite:///' + db_path
-else:
-    # For production environment (Render)
-    ssl_params = "?sslmode=prefer"
-    if '?' in db_url:
-        db_url = db_url.split('?')[0] + ssl_params
-    else:
-        db_url = db_url + ssl_params
-    
-app.config['SQLALCHEMY_DATABASE_URI'] = db_url
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
-    'connect_args': {
-        'sslmode': 'prefer'
+# Configure database URI and engine options
+if os.getenv('SUPABASE_DB_URL'):
+    app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('SUPABASE_DB_URL')
+    app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
+        'connect_args': {
+            'sslmode': 'verify-full',
+            'sslrootcert': '/etc/ssl/certs/ca-certificates.crt',
+            'options': '-c ssl_min_protocol_version=TLSv1.2'
+        },
+        'pool_pre_ping': True,
+        'pool_recycle': 300,
+        'pool_size': 10,
+        'max_overflow': 5,
+        'pool_timeout': 30
     }
-}
+else:
+    # Local development configuration
+    BASE_DIR = os.path.abspath(os.path.dirname(__file__))
+    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + os.path.join(BASE_DIR, 'orders.db')
+
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 # Initialize database
 db = SQLAlchemy(app)
@@ -379,44 +382,75 @@ def send_whatsapp_review_request(order):
     # Here, integrate with WhatsApp Business API
     print(f"Sending WhatsApp message to {order.telephone} for order {order.order_number}")
 
+def send_message(order):
+    """Send review request message based on communication channel"""
+    try:
+        if order.communication_channel == 'email':
+            send_email_review_request(order)
+        elif order.communication_channel == 'whatsapp':
+            send_whatsapp_review_request(order)
+        return True
+    except Exception as e:
+        app.logger.error(f"Error sending message for order {order.id}: {str(e)}")
+        return False
+
 # Scheduled job to trigger review requests
 
 def check_and_send_review_requests():
     with app.app_context():
-        # Get orders that are 1 day old and haven't had review requests sent
-        cutoff_date = date.today() - timedelta(days=1)
-        orders_to_process = Order.query.filter(
-            Order.order_date <= cutoff_date,
-            Order.message_sent == False
-        ).all()
-
-        for order in orders_to_process:
-            try:
-                if order.communication_channel == 'email':
-                    send_email_review_request(order)
-                elif order.communication_channel == 'whatsapp':
-                    send_whatsapp_review_request(order)
+        try:
+            with db.engine.connect() as connection:
+                # Calculate threshold date
+                threshold_date = datetime.utcnow().date() - timedelta(days=1)
                 
-                order.message_sent = True
-                db.session.commit()
-            except Exception as e:
-                print(f"Error processing order {order.order_number}: {str(e)}")
-                db.session.rollback()
+                # Explicit transaction block
+                with connection.begin():
+                    # Get pending orders
+                    orders = connection.execute(
+                        text("""
+                            SELECT * FROM "order"
+                            WHERE order_date <= :threshold
+                            AND message_sent = false
+                        """),
+                        {'threshold': threshold_date}
+                    ).fetchall()
 
-# Schedule the review request check
+                    # Process orders
+                    for order in orders:
+                        # Implement message sending logic here
+                        send_message(order)
+                        
+                        # Mark as sent
+                        connection.execute(
+                            text("""
+                                UPDATE "order"
+                                SET message_sent = true
+                                WHERE id = :order_id
+                            """),
+                            {'order_id': order.id}
+                        )
+                    
+                    app.logger.info(f"Processed {len(orders)} review requests")
+
+        except Exception as e:
+            app.logger.error(f"Job failed: {str(e)}", exc_info=True)
+
+# Add scheduled job
+from apscheduler.schedulers import SchedulerAlreadyRunningError
 scheduler = BackgroundScheduler()
-scheduler.add_job(
-    func=check_and_send_review_requests,
-    trigger="interval",
-    days=1,
-    next_run_time=datetime.now() + timedelta(seconds=10),
-    id="check_and_send_review_requests"
-)
-
 try:
+    scheduler.add_job(
+        id='review_requests',
+        func=check_and_send_review_requests,
+        trigger='interval',
+        days=1,
+        max_instances=1,
+        coalesce=True,
+        replace_existing=True
+    )
     scheduler.start()
-except (KeyboardInterrupt, SystemExit):
-    scheduler.shutdown()
+except SchedulerAlreadyRunningError:
+    pass
 
 def schedule_order_messages():
     """
