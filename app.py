@@ -21,8 +21,8 @@ if not db_url:
     db_path = os.path.join(BASE_DIR, 'orders.db')
     db_url = 'sqlite:///' + db_path
 else:
-    # Add comprehensive SSL parameters for Supabase
-    ssl_params = "?sslmode=verify-full&sslcert=none&sslkey=none&sslrootcert=none"
+    # Use system SSL certificates
+    ssl_params = "?sslmode=verify-full&sslrootcert=system"
     if '?' in db_url:
         db_url = db_url.split('?')[0] + ssl_params
     else:
@@ -509,11 +509,4 @@ def test_db():
             }
         })
     except Exception as e:
-        return jsonify({
-            'database_type': db_type,
-            'connection_status': f'Connection failed: {str(e)}',
-            'stats': None
-        }), 500
-
-if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=os.getenv('PORT', 5001))
+        r
