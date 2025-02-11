@@ -340,25 +340,45 @@ def create_order():
     form.client_id.choices = [(str(c.id), c.name) for c in clients] + [('', 'No Client')]
 
     if form.validate_on_submit():
-        # Generate order number
-        today = datetime.now()
-        order_number = f"TSE-{today.year}-{str(today.month).zfill(2)}-{str(today.day).zfill(2)}-{str(random.randint(1, 999)).zfill(3)}"
-        
-        order = Order(
-            order_number=order_number,
-            customer_name=form.customer_name.data,
-            telephone=form.telephone.data,
-            email=form.email.data,
-            order_date=form.order_date.data,
-            communication_channel=form.communication_channel.data,
-            client_id=form.client_id.data,  # This will now be None if no client selected
-            details=form.details.data,
-            delivery_required=form.delivery_required.data,
-            delivery_address=form.delivery_address.data,
-            delivery_instructions=form.delivery_instructions.data
-        )
-        
         try:
+            # If no client is selected, check if we should create one
+            client_id = form.client_id.data
+            if not client_id:
+                # Check if a client with this email already exists
+                existing_client = Client.query.filter_by(email=form.email.data).first() if form.email.data else None
+                
+                if existing_client:
+                    client_id = existing_client.id
+                else:
+                    # Create new client
+                    new_client = Client(
+                        name=form.customer_name.data,
+                        telephone=form.telephone.data,
+                        email=form.email.data,
+                        communication_channel=form.communication_channel.data
+                    )
+                    db.session.add(new_client)
+                    db.session.flush()  # This gets us the new client's ID
+                    client_id = new_client.id
+
+            # Generate order number
+            today = datetime.now()
+            order_number = f"TSE-{today.year}-{str(today.month).zfill(2)}-{str(today.day).zfill(2)}-{str(random.randint(1, 999)).zfill(3)}"
+            
+            order = Order(
+                order_number=order_number,
+                customer_name=form.customer_name.data,
+                telephone=form.telephone.data,
+                email=form.email.data,
+                order_date=form.order_date.data,
+                communication_channel=form.communication_channel.data,
+                client_id=client_id,
+                details=form.details.data,
+                delivery_required=form.delivery_required.data,
+                delivery_address=form.delivery_address.data,
+                delivery_instructions=form.delivery_instructions.data
+            )
+            
             db.session.add(order)
             db.session.commit()
             flash('Order created successfully!', 'success')
