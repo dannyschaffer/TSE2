@@ -509,4 +509,11 @@ def test_db():
             }
         })
     except Exception as e:
-        r
+        return jsonify({
+            'database_type': db_type,
+            'connection_status': f'Connection failed: {str(e)}',
+            'stats': None
+        }), 500
+
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', port=os.getenv('PORT', 5001))
